@@ -91,7 +91,7 @@ curl -fsSL https://raw.githubusercontent.com/khanalsaroj/fake-hacking/main/hacki
 
 ### 🪟 Windows (Native PowerShell)
 
-> ⚠️ Expect: Expect broken colors and sad terminals.
+> ⚠️ Expect broken colors and sad terminals.
 
 ---
 
