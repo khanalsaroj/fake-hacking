@@ -22,6 +22,12 @@ operation:
 
 ---
 
+### 🎥 Demo
+
+<p align="center">
+  <img src="demo.gif" width="100%"  alt="Demo fake hacking"/>
+</p>
+
 ## ⚙️ How To Run
 
 ### 🐧 Linux / macOS
