@@ -925,7 +925,9 @@ sleep 0.3
 
 echo ""
 echo -ne "${R}root@web-prod-01${GR}:${B}/root${GR}#${NC}"
-type_text_clean "${DIM}mkdir -p /root/.ssh && echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAXQMfdioW/ibO3rtEACYqplJjfYa2hSqQtfNIk4h7Dah+IrHeiN0m8vr2ldkso2gqQpvxFArJZ2EAiRtMQVfeTyauhd5rk0x8H00AfQABJDq6grldizuYy5tCC7V2Fw==ghost@kali' >> /root/.ssh/authorized_keys${NC}"
+type_text_clean "${DIM}mkdir -p /root/.ssh && echo ${NC}"
+echo -ne "${DIM}ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAXQMfdioW/ibO3rtEACYqplJjfYa2hSqQtfNIk4h7Dah+IrHeiN0m8vr2ldkso2gqQpvxFArJZ2EAiRtMQVfeTyauhd5rk0x8H00AfQABJDq6grldizuYy5tCC7V2Fw${NC}"
+type_text_clean "${DIM}==ghost@kali' >> /root/.ssh/authorized_keys${NC}"
 sleep 0.4
 echo -e "${G}[+]${NC} ${W}SSH backdoor key installed for root access${NC}"
 sleep 0.3
