@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FAKE HACKING — Terminal Simulator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── TOKENS ─────────────────────────────────────────── */
+    :root {
+      --bg:        #0a0c0f;
+      --surface:   #0f1318;
+      --border:    #1e2530;
+      --green:     #00ff87;
+      --green-dim: #00cc6a;
+      --green-glow:rgba(0,255,135,.18);
+      --amber:     #ffb300;
+      --red:       #ff4444;
+      --muted:     #4a5568;
+      --text:      #cbd5e0;
+      --mono:      'Share Tech Mono', monospace;
+      --sans:      'Inter', system-ui, sans-serif;
+    }
+
+    /* ── RESET ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── SCANLINE OVERLAY ────────────────────────────────── */
+    body::before {
+      content: '';
+      pointer-events: none;
+      position: fixed; inset: 0; z-index: 999;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,.07) 2px,
+        rgba(0,0,0,.07) 4px
+      );
+    }
+
+    /* ── NAV ─────────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,12,15,.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .75rem 2rem;
+    }
+    .nav-brand {
+      font-family: var(--mono);
+      color: var(--green);
+      font-size: 1rem;
+      letter-spacing: .05em;
+    }
+    .nav-brand span { color: var(--muted); }
+    .nav-links { display: flex; gap: 1.5rem; list-style: none; }
+    .nav-links a {
+      font-family: var(--mono);
+      font-size: .8rem;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: .06em;
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--green); }
+
+    /* ── HERO ────────────────────────────────────────────── */
+    .hero {
+      min-height: 92vh;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 4rem 1.5rem 2rem;
+      position: relative;
+    }
+    .hero::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 70% 55% at 50% 40%, rgba(0,255,135,.055), transparent 70%);
+      pointer-events: none;
+    }
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: .75rem;
+      letter-spacing: .18em;
+      color: var(--green);
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-family: var(--mono);
+      font-size: clamp(2.8rem, 8vw, 6rem);
+      color: #fff;
+      line-height: 1;
+      letter-spacing: -.02em;
+    }
+    .hero h1 .accent { color: var(--green); text-shadow: 0 0 28px var(--green-dim); }
+    .hero-sub {
+      margin-top: 1.25rem;
+      font-size: 1.1rem;
+      color: var(--muted);
+      max-width: 540px;
+    }
+    .hero-badges {
+      display: flex; flex-wrap: wrap; gap: .5rem;
+      justify-content: center;
+      margin-top: 2rem;
+    }
+    .badge {
+      font-family: var(--mono);
+      font-size: .7rem;
+      padding: .2rem .65rem;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      color: var(--muted);
+      background: var(--surface);
+      letter-spacing: .05em;
+    }
+    .badge.active { color: var(--green); border-color: rgba(0,255,135,.3); }
+
+    /* ── TERMINAL WINDOW ─────────────────────────────────── */
+    .terminal-wrap {
+      width: min(700px, 94vw);
+      margin: 3rem auto 0;
+      position: relative; z-index: 1;
+    }
+    .terminal {
+      background: #060809;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 60px rgba(0,255,135,.07), 0 24px 60px rgba(0,0,0,.6);
+    }
+    .terminal-bar {
+      background: #111518;
+      border-bottom: 1px solid var(--border);
+      padding: .55rem 1rem;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    .terminal-title {
+      font-family: var(--mono);
+      font-size: .72rem;
+      color: var(--muted);
+      margin-left: auto; margin-right: auto;
+      transform: translateX(-16px);
+    }
+    .terminal-body {
+      padding: 1.25rem 1.5rem 1.5rem;
+      font-family: var(--mono);
+      font-size: .82rem;
+      line-height: 1.85;
+      min-height: 220px;
+    }
+    .line-prompt { color: var(--green); }
+    .line-cmd    { color: #fff; }
+    .line-info   { color: var(--muted); }
+    .line-ok     { color: var(--green); }
+    .line-warn   { color: var(--amber); }
+    .line-section { color: #60a5fa; }
+
+    /* blinking cursor */
+    .cursor {
+      display: inline-block;
+      width: 9px; height: 1em;
+      background: var(--green);
+      vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── SECTION SHARED ──────────────────────────────────── */
+    section { padding: 5rem 1.5rem; }
+    .container { max-width: 860px; margin: 0 auto; }
+    .section-label {
+      font-family: var(--mono);
+      font-size: .7rem;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 1rem;
+    }
+    h2 {
+      font-family: var(--mono);
+      font-size: clamp(1.5rem, 4vw, 2.2rem);
+      color: #fff;
+      margin-bottom: 2rem;
+    }
+
+    /* ── FEATURES ────────────────────────────────────────── */
+    #features { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+    .feat {
+      background: var(--surface);
+      padding: 1.5rem;
+    }
+    .feat-tag {
+      font-family: var(--mono);
+      font-size: .68rem;
+      color: var(--green);
+      letter-spacing: .1em;
+      margin-bottom: .4rem;
+    }
+    .feat h3 {
+      font-family: var(--mono);
+      font-size: .95rem;
+      color: #fff;
+      margin-bottom: .35rem;
+    }
+    .feat p { font-size: .85rem; color: var(--muted); }
+
+    /* ── INSTALL ─────────────────────────────────────────── */
+    #install {}
+    .install-tabs {
+      display: flex; gap: 0;
+      margin-bottom: 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      font-family: var(--mono);
+      font-size: .78rem;
+      padding: .55rem 1.2rem;
+      background: transparent;
+      border: none; border-bottom: 2px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      letter-spacing: .06em;
+      transition: color .2s, border-color .2s;
+    }
+    .tab-btn.active { color: var(--green); border-bottom-color: var(--green); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .step {
+      display: flex; gap: 1.25rem;
+      padding: 1.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .step:last-child { border-bottom: none; }
+    .step-num {
+      font-family: var(--mono);
+      font-size: .75rem;
+      color: var(--green);
+      min-width: 2rem;
+      padding-top: .1rem;
+    }
+    .step-body { flex: 1; }
+    .step-title {
+      font-family: var(--mono);
+      color: #fff;
+      margin-bottom: .5rem;
+      font-size: .9rem;
+    }
+    .step-body p { font-size: .875rem; color: var(--muted); margin-bottom: .75rem; }
+
+    .code-block {
+      background: #060809;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: .9rem 1.1rem;
+      position: relative;
+      overflow-x: auto;
+    }
+    .code-block code {
+      font-family: var(--mono);
+      font-size: .8rem;
+      color: var(--green);
+      white-space: pre;
+    }
+    .copy-btn {
+      position: absolute; top: .5rem; right: .5rem;
+      font-family: var(--mono);
+      font-size: .65rem;
+      padding: .2rem .5rem;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      border-radius: 3px;
+      cursor: pointer;
+      transition: color .2s, border-color .2s;
+    }
+    .copy-btn:hover { color: var(--green); border-color: rgba(0,255,135,.3); }
+    .copy-btn.copied { color: var(--green); }
+
+    /* ── DISCLAIMER ──────────────────────────────────────── */
+    #disclaimer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .disclaimer-box {
+      border: 1px solid rgba(255,68,68,.25);
+      background: rgba(255,68,68,.04);
+      border-radius: 4px;
+      padding: 1.5rem;
+      font-family: var(--mono);
+      font-size: .82rem;
+      line-height: 1.9;
+    }
+    .disclaimer-box .dl { color: var(--red); margin-bottom: .5rem; font-size: .72rem; letter-spacing: .12em; }
+    .disclaimer-box p { color: var(--text); }
+
+    /* ── CREDIT ──────────────────────────────────────────── */
+    #credit .credit-box {
+      border: 1px solid rgba(0,255,135,.15);
+      background: rgba(0,255,135,.025);
+      border-radius: 4px;
+      padding: 1.75rem 2rem;
+      font-family: var(--mono);
+    }
+    .credit-name {
+      font-size: 1.4rem;
+      color: var(--green);
+      margin-bottom: .5rem;
+      text-shadow: 0 0 20px rgba(0,255,135,.3);
+    }
+    .credit-sub { font-size: .8rem; color: var(--muted); }
+    .credit-uses {
+      margin-top: 1.25rem;
+      display: flex; flex-wrap: wrap; gap: .5rem;
+    }
+    .use-tag {
+      font-size: .72rem;
+      padding: .25rem .7rem;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      color: var(--muted);
+      background: var(--bg);
+    }
+
+    /* ── FOOTER ──────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: .72rem;
+      color: var(--muted);
+    }
+    footer a { color: var(--green); text-decoration: none; }
+
+    /* ── RESPONSIVE ──────────────────────────────────────── */
+    @media (max-width: 600px) {
+      nav { padding: .65rem 1rem; }
+      .nav-links { gap: 1rem; }
+      .step { flex-direction: column; gap: .5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand"><span>~/</span>fake-hacking</div>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#install">Install</a></li>
+    <li><a href="#credit">Credit</a></li>
+    <li><a href="https://github.com/khanalsaroj/fake-hacking" target="_blank">GitHub ↗</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <p class="eyebrow">Terminal Simulator</p>
+  <h1><span class="accent">FAKE</span><br>HACKING</h1>
+  <p class="hero-sub">A cinematic red-team operation — fully simulated, zero real targets. Run it in any terminal and look like a Hollywood hacker.</p>
+  <div class="hero-badges">
+    <span class="badge active">OSINT</span>
+    <span class="badge active">Port Scan</span>
+    <span class="badge active">SQL Injection</span>
+    <span class="badge active">Exploit</span>
+    <span class="badge active">Root Access</span>
+    <span class="badge">No real hacking</span>
+  </div>
+
+  <!-- LIVE TERMINAL DEMO -->
+  <div class="terminal-wrap">
+    <div class="terminal">
+      <div class="terminal-bar">
+        <span class="dot dot-r"></span>
+        <span class="dot dot-y"></span>
+        <span class="dot dot-g"></span>
+        <span class="terminal-title">bash — 80×24</span>
+      </div>
+      <div class="terminal-body" id="term-out"></div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="container">
+    <p class="section-label">What's simulated</p>
+    <h2>Full red-team pipeline</h2>
+    <div class="features-grid">
+      <div class="feat">
+        <div class="feat-tag">01 — RECON</div>
+        <h3>OSINT &amp; Recon</h3>
+        <p>Target enumeration, DNS lookups, WHOIS, and social profile scraping — all simulated with realistic output.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-tag">02 — SCAN</div>
+        <h3>Port Scanning</h3>
+        <p>Nmap-style sweep across all 65,535 ports with service banners and OS fingerprinting output.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-tag">03 — FUZZ</div>
+        <h3>Web Fuzzing</h3>
+        <p>Directory brute-force, parameter injection, and hidden endpoint discovery with HTTP status codes.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-tag">04 — INJECT</div>
+        <h3>SQL Injection</h3>
+        <p>Union-based and blind SQLi with extracted table dumps. Looks painfully authentic.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-tag">05 — AUTH</div>
+        <h3>Credential Brute Force</h3>
+        <p>Hydra-style credential stuffing with a rockyou wordlist counter and a satisfying "ACCESS GRANTED".</p>
+      </div>
+      <div class="feat">
+        <div class="feat-tag">06 — PWNED</div>
+        <h3>Metasploit Exploit + Root</h3>
+        <p>Full MSF session, privilege escalation to root, data exfiltration, and cinematic finale sequence.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INSTALL -->
+<section id="install">
+  <div class="container">
+    <p class="section-label">Get started</p>
+    <h2>How to run</h2>
+
+    <div class="install-tabs">
+      <button class="tab-btn active" onclick="switchTab('linux', this)">Linux / macOS</button>
+      <button class="tab-btn" onclick="switchTab('wsl', this)">Windows (WSL)</button>
+      <button class="tab-btn" onclick="switchTab('ps', this)">Windows (PowerShell)</button>
+    </div>
+
+    <!-- Linux / macOS -->
+    <div class="tab-panel active" id="tab-linux">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-body">
+          <div class="step-title">Prerequisites</div>
+          <p>You need <code style="color:var(--green);font-family:var(--mono)">bash</code> and <code style="color:var(--green);font-family:var(--mono)">curl</code> — both are installed by default on macOS and most Linux distros.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-body">
+          <div class="step-title">Run the one-liner</div>
+          <p>Open your terminal and paste:</p>
+          <div class="code-block">
+            <code>curl -fsSL https://raw.githubusercontent.com/khanalsaroj/fake-hacking/main/hacking.sh | bash</code>
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-body">
+          <div class="step-title">Sit back &amp; enjoy</div>
+          <p>The simulation runs automatically. No configuration needed.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- WSL -->
+    <div class="tab-panel" id="tab-wsl">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-body">
+          <div class="step-title">Install WSL</div>
+          <p>Open PowerShell as Administrator and run:</p>
+          <div class="code-block">
+            <code>wsl --install</code>
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+          </div>
+          <p style="margin-top:.6rem">Restart your PC when prompted.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-body">
+          <div class="step-title">Open Ubuntu</div>
+          <p>Go to <strong style="color:#fff">Start → Ubuntu</strong>, or from PowerShell:</p>
+          <div class="code-block">
+            <code>wsl</code>
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+          </div>
+          <p style="margin-top:.6rem">Create a username and password when prompted.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-body">
+          <div class="step-title">Update packages</div>
+          <div class="code-block">
+            <code>sudo apt update && sudo apt upgrade -y</code>
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-body">
+          <div class="step-title">Run fake-hacking</div>
+          <div class="code-block">
+            <code>curl -fsSL https://raw.githubusercontent.com/khanalsaroj/fake-hacking/main/hacking.sh | bash</code>
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PowerShell -->
+    <div class="tab-panel" id="tab-ps">
+      <div class="step">
+        <div class="step-num">⚠</div>
+        <div class="step-body">
+          <div class="step-title" style="color:var(--amber)">Expect broken colors</div>
+          <p>Native PowerShell doesn't fully support ANSI escape codes. You'll get a degraded experience. <strong style="color:#fff">WSL is strongly recommended.</strong></p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-body">
+          <div class="step-title">Download the script</div>
+          <div class="code-block">
+            <code>Invoke-WebRequest -Uri "https://raw.githubusercontent.com/khanalsaroj/fake-hacking/main/hacking.sh" -OutFile hacking.sh</code>
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-body">
+          <div class="step-title">Run via bash (Git Bash / Cygwin)</div>
+          <div class="code-block">
+            <code>bash hacking.sh</code>
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DISCLAIMER -->
+<section id="disclaimer">
+  <div class="container">
+    <p class="section-label">Legal</p>
+    <h2>Disclaimer</h2>
+    <div class="disclaimer-box">
+      <div class="dl">⚠ READ THIS</div>
+      <p>This project does <strong style="color:#fff">NOT</strong> hack anything. No real networks, servers, or systems are accessed, probed, or modified. Everything is a simulation — fake payloads, fake responses, fake credentials. If you use this tool to misrepresent capabilities or commit fraud, that is entirely on you. This repository carries no liability for misuse.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CREDIT -->
+<section id="credit">
+  <div class="container">
+    <p class="section-label">Attribution</p>
+    <h2>Credits</h2>
+    <div class="credit-box">
+      <div class="credit-name">KHANAL SAROJ</div>
+      <div class="credit-sub">Creator &amp; maintainer of Fake Hacking</div>
+      <div class="credit-uses">
+        <span class="use-tag">🎬 Movie</span>
+        <span class="use-tag">📺 Series</span>
+        <span class="use-tag">📹 YouTube</span>
+        <span class="use-tag">🎵 TikTok / Shorts</span>
+        <span class="use-tag">🎤 Talk / Presentation</span>
+      </div>
+      <p style="margin-top:1.25rem;font-size:.8rem;color:var(--muted)">If you use this project in any of the above, please credit <span style="color:var(--green)">"Fake Hacking by KHANAL SAROJ"</span>. Basic human decency.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>
+    <a href="https://github.com/khanalsaroj/fake-hacking" target="_blank">github.com/khanalsaroj/fake-hacking</a>
+    &nbsp;·&nbsp;
+    made by <span style="color:var(--green)">KHANAL SAROJ</span>
+    &nbsp;·&nbsp;
+    no real hacking happened
+  </p>
+</footer>
+
+<script>
+/* ── TERMINAL ANIMATION ──────────────────────────────── */
+const lines = [
+  { cls:'line-prompt', t:'root@kali:~# ' },
+  { cls:'line-cmd',    t:'./hacking.sh', delay: 60 },
+  { cls:'',            t:'' },
+  { cls:'line-section',t:'[*] Initialising red-team operation...' },
+  { cls:'line-info',   t:'[~] Target: 192.168.1.1' },
+  { cls:'line-info',   t:'[~] Running OSINT recon...' },
+  { cls:'line-ok',     t:'[+] Found 3 subdomains, 12 open ports' },
+  { cls:'line-info',   t:'[~] Launching port scan (65535 ports)...' },
+  { cls:'line-ok',     t:'[+] 22/tcp  open  ssh     OpenSSH 8.2' },
+  { cls:'line-ok',     t:'[+] 80/tcp  open  http    Apache 2.4.41' },
+  { cls:'line-ok',     t:'[+] 3306/tcp open  mysql   MySQL 5.7.33' },
+  { cls:'line-warn',   t:'[!] SQLi vulnerability detected on /login' },
+  { cls:'line-info',   t:'[~] Injecting payload...' },
+  { cls:'line-ok',     t:'[+] Dumped credentials table (847 rows)' },
+  { cls:'line-info',   t:'[~] Brute-forcing SSH with rockyou.txt...' },
+  { cls:'line-ok',     t:'[+] PASSWORD FOUND: s3cr3t@2024' },
+  { cls:'line-section',t:'[*] Launching MSF exploit CVE-2024-0001' },
+  { cls:'line-ok',     t:'[+] Shell opened: uid=0(root) gid=0(root)' },
+  { cls:'line-ok',     t:'[+] ROOT ACCESS GRANTED ✓' },
+  { cls:'line-info',   t:'[~] Exfiltrating data...' },
+  { cls:'line-ok',     t:'[+] Done. 4.2 GB transferred.' },
+];
+
+const out = document.getElementById('term-out');
+let li = 0, ci = 0;
+
+function typeChar() {
+  if (li >= lines.length) {
+    // blink cursor at end
+    const cur = document.createElement('span');
+    cur.className = 'cursor';
+    out.appendChild(cur);
+    return;
+  }
+  const line = lines[li];
+  if (ci === 0) {
+    // start new line div
+    const div = document.createElement('div');
+    div.id = 'tl-' + li;
+    if (line.cls) div.className = line.cls;
+    out.appendChild(div);
+  }
+  const div = document.getElementById('tl-' + li);
+  if (ci < line.t.length) {
+    div.textContent += line.t[ci];
+    ci++;
+    setTimeout(typeChar, line.delay ?? 18);
+  } else {
+    li++; ci = 0;
+    setTimeout(typeChar, li < lines.length ? 120 : 0);
+  }
+}
+
+setTimeout(typeChar, 600);
+
+/* ── TAB SWITCHING ───────────────────────────────────── */
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ── COPY BUTTON ─────────────────────────────────────── */
+function copyCode(btn) {
+  const code = btn.previousElementSibling.textContent.trim();
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'COPIED';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('copied'); }, 1800);
+  });
+}
+</script>
+</body>
+</html>
