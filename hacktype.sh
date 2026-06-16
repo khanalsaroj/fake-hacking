@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Terminal colors and effects
 R='\033[1;31m'
