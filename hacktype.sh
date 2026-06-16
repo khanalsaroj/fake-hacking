@@ -37,24 +37,28 @@ type_text_clean() {
 
     local processed
     processed=$(echo -e "$text")
+
     local length=${#processed}
     local index=0
 
-    stty -echo -icanon min 1 time 0 < /dev/tty
-    trap 'stty echo icanon < /dev/tty; echo' EXIT
+    exec 3</dev/tty || return 1
 
-    while true; do
-        read -r -s -n 1 < /dev/tty
+    stty -F /dev/tty -echo -icanon min 1 time 0
+    trap 'stty -F /dev/tty echo icanon; exec 3<&-; echo' EXIT
 
-        [[ $index -ge $length ]] && break
+    while (( index < length )); do
+        read -r -s -n 1 <&3
 
         local chunk="${processed:$index:$chars_per_key}"
-        echo -ne "$chunk"
+        printf "%s" "$chunk"
+
         ((index += chars_per_key))
     done
 
     echo
-    stty echo icanon < /dev/tty
+
+    stty -F /dev/tty echo icanon
+    exec 3<&-
     trap - EXIT
 }
 
