@@ -34,17 +34,10 @@ operation:
 
 > Requires: `bash`, `curl`
 
-### ▶️ Auto Typing Mode
-
 ```bash
 curl -fsSL https://raw.githubusercontent.com/khanalsaroj/fake-hacking/main/hacking.sh | bash
 ```
 
-### ⌨️ Keypress Mode
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/khanalsaroj/fake-hacking/main/hacktype.sh | bash
-```
 
 ---
 
@@ -97,17 +90,10 @@ sudo apt install -y build-essential git curl wget vim htop neofetch
 
 #### 6. Run inside WSL (Ubuntu terminal)
 
-### ▶️ Auto Typing Mode
-
 ```bash
 curl -fsSL https://raw.githubusercontent.com/khanalsaroj/fake-hacking/main/hacking.sh | bash
 ```
 
-### ⌨️ Keypress Mode
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/khanalsaroj/fake-hacking/main/hacktype.sh | bash
-```
 
 ---
 
