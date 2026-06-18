@@ -3,21 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FAKE HACKING — Terminal Simulator</title>
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <title>FAKE HACKING - Terminal Simulator</title>
+  <meta name="description" content="A cinematic, fully-simulated red-team operation you run in any terminal. Zero real targets, zero real hacking - just Hollywood-grade hacker output." />
+  <meta name="theme-color" content="#f4f6fb" />
+
+  <!-- Social sharing -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="FAKE HACKING - Terminal Simulator" />
+  <meta property="og:description" content="Run a cinematic, fully-simulated red-team operation in any terminal. No real targets. No real hacking." />
+  <meta property="og:image" content="https://raw.githubusercontent.com/khanalsaroj/fake-hacking/main/demo.gif" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="FAKE HACKING - Terminal Simulator" />
+  <meta name="twitter:description" content="Run a cinematic, fully-simulated red-team operation in any terminal." />
+
+  <!-- Branded terminal favicon -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23060809'/%3E%3Cpath d='M7 11l5 5-5 5' fill='none' stroke='%2300ff87' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cline x1='15' y1='22' x2='24' y2='22' stroke='%2300ff87' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    /* ── TOKENS ─────────────────────────────────────────── */
+    /* ── TOKENS (light + neon multi-accent) ──────────────── */
     :root {
-      --bg:        #0a0c0f;
-      --surface:   #0f1318;
-      --border:    #1e2530;
-      --green:     #00ff87;
-      --green-dim: #00cc6a;
-      --green-glow:rgba(0,255,135,.18);
-      --amber:     #ffb300;
-      --red:       #ff4444;
-      --muted:     #4a5568;
-      --text:      #cbd5e0;
+      --bg:        #f4f6fb;   /* page */
+      --surface:   #ffffff;   /* cards / raised */
+      --surface-2: #eaeef6;   /* tinted panels, hover */
+      --border:    #dde3ee;
+      --text:      #161b29;   /* ink */
+      --muted:     #59617a;   /* secondary text — AA on --bg */
+
+      /* vivid accents (full) + deep variants (AA text on light) */
+      --green:      #08a24a;  --green-deep: #0a6e38;
+      --blue:       #2d7dff;  --blue-deep:  #1559c7;
+      --pink:       #ff3d8b;  --pink-deep:  #c81e63;
+      --amber:      #f59e0b;  --amber-deep: #a8560a;
+      --red:        #e5484d;  --red-deep:   #c0353a;
+
+      /* terminal + code blocks stay dark (a terminal is dark) */
+      --term-bg:    #0b0e14;
+      --term-green: #00ff87;
+      --term-amber: #ffb300;
+      --term-blue:  #60a5fa;
+      --term-muted: #7c89a0;
+      --term-text:  #d4dceb;
+
       --mono:      'Share Tech Mono', monospace;
       --sans:      'Inter', system-ui, sans-serif;
     }
@@ -26,7 +55,12 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body {
-      background: var(--bg);
+      background:
+        radial-gradient(38% 30% at 10% 6%,  rgba(45,125,255,.12), transparent 70%),
+        radial-gradient(34% 28% at 92% 2%,  rgba(255,61,139,.10), transparent 70%),
+        radial-gradient(46% 38% at 72% 98%, rgba(8,162,74,.10),   transparent 70%),
+        var(--bg);
+      background-attachment: fixed;
       color: var(--text);
       font-family: var(--sans);
       font-size: 16px;
@@ -34,36 +68,22 @@
       overflow-x: hidden;
     }
 
-    /* ── SCANLINE OVERLAY ────────────────────────────────── */
-    body::before {
-      content: '';
-      pointer-events: none;
-      position: fixed; inset: 0; z-index: 999;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0,0,0,.07) 2px,
-        rgba(0,0,0,.07) 4px
-      );
-    }
-
     /* ── NAV ─────────────────────────────────────────────── */
     nav {
       position: sticky; top: 0; z-index: 100;
-      background: rgba(10,12,15,.92);
-      backdrop-filter: blur(8px);
+      background: rgba(255,255,255,.78);
+      backdrop-filter: blur(10px) saturate(140%);
       border-bottom: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
       padding: .75rem 2rem;
     }
     .nav-brand {
       font-family: var(--mono);
-      color: var(--green);
+      color: var(--green-deep);
       font-size: 1rem;
       letter-spacing: .05em;
     }
-    .nav-brand span { color: var(--muted); }
+    .nav-brand span { color: var(--blue-deep); }
     .nav-links { display: flex; gap: 1.5rem; list-style: none; }
     .nav-links a {
       font-family: var(--mono);
@@ -73,11 +93,12 @@
       letter-spacing: .06em;
       transition: color .2s;
     }
-    .nav-links a:hover { color: var(--green); }
+    .nav-links a:hover { color: var(--blue-deep); }
 
     /* ── HERO ────────────────────────────────────────────── */
     .hero {
       min-height: 92vh;
+      min-height: 92dvh;
       display: flex; align-items: center; justify-content: center;
       flex-direction: column;
       text-align: center;
@@ -87,25 +108,29 @@
     .hero::after {
       content: '';
       position: absolute; inset: 0;
-      background: radial-gradient(ellipse 70% 55% at 50% 40%, rgba(0,255,135,.055), transparent 70%);
+      background: radial-gradient(ellipse 70% 55% at 50% 38%, rgba(255,255,255,.55), transparent 70%);
       pointer-events: none;
     }
     .eyebrow {
       font-family: var(--mono);
       font-size: .75rem;
       letter-spacing: .18em;
-      color: var(--green);
+      color: var(--green-deep);
       text-transform: uppercase;
       margin-bottom: 1.5rem;
     }
     .hero h1 {
       font-family: var(--mono);
       font-size: clamp(2.8rem, 8vw, 6rem);
-      color: #fff;
+      color: var(--text);
       line-height: 1;
       letter-spacing: -.02em;
     }
-    .hero h1 .accent { color: var(--green); text-shadow: 0 0 28px var(--green-dim); }
+    .hero h1 .accent {
+      background: linear-gradient(115deg, var(--green) 0%, var(--blue) 48%, var(--pink-deep) 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; color: transparent;
+    }
     .hero-sub {
       margin-top: 1.25rem;
       font-size: 1.1rem;
@@ -127,7 +152,13 @@
       background: var(--surface);
       letter-spacing: .05em;
     }
-    .badge.active { color: var(--green); border-color: rgba(0,255,135,.3); }
+    /* each active badge takes its own hue → multi-accent pop */
+    .badge.active { font-weight: 600; }
+    .hero-badges .badge:nth-child(1).active { color: var(--green-deep); border-color: rgba(8,162,74,.45);  background: rgba(8,162,74,.09); }
+    .hero-badges .badge:nth-child(2).active { color: var(--blue-deep);  border-color: rgba(45,125,255,.45); background: rgba(45,125,255,.09); }
+    .hero-badges .badge:nth-child(3).active { color: var(--pink-deep);  border-color: rgba(255,61,139,.45); background: rgba(255,61,139,.09); }
+    .hero-badges .badge:nth-child(4).active { color: var(--amber-deep); border-color: rgba(245,158,11,.5);  background: rgba(245,158,11,.10); }
+    .hero-badges .badge:nth-child(5).active { color: var(--green-deep); border-color: rgba(8,162,74,.45);  background: rgba(8,162,74,.09); }
 
     /* ── TERMINAL WINDOW ─────────────────────────────────── */
     .terminal-wrap {
@@ -136,15 +167,18 @@
       position: relative; z-index: 1;
     }
     .terminal {
-      background: #060809;
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      background: var(--term-bg);
+      border: 1px solid #1c2230;
+      border-radius: 10px;
       overflow: hidden;
-      box-shadow: 0 0 60px rgba(0,255,135,.07), 0 24px 60px rgba(0,0,0,.6);
+      box-shadow:
+        0 24px 60px rgba(22,27,41,.22),
+        0 8px 30px rgba(45,125,255,.16),
+        0 18px 50px rgba(255,61,139,.10);
     }
     .terminal-bar {
-      background: #111518;
-      border-bottom: 1px solid var(--border);
+      background: #111726;
+      border-bottom: 1px solid #1c2230;
       padding: .55rem 1rem;
       display: flex; align-items: center; gap: .5rem;
     }
@@ -155,29 +189,39 @@
     .terminal-title {
       font-family: var(--mono);
       font-size: .72rem;
-      color: var(--muted);
+      color: var(--term-muted);
       margin-left: auto; margin-right: auto;
       transform: translateX(-16px);
     }
     .terminal-body {
+      position: relative;
       padding: 1.25rem 1.5rem 1.5rem;
       font-family: var(--mono);
       font-size: .82rem;
       line-height: 1.85;
       min-height: 220px;
+      color: var(--term-text);
     }
-    .line-prompt { color: var(--green); }
+    /* faint CRT scanlines, contained to the dark terminal only */
+    .terminal-body::after {
+      content: '';
+      position: absolute; inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.16) 2px, rgba(0,0,0,.16) 4px);
+      opacity: .35;
+    }
+    .line-prompt { color: var(--term-green); }
     .line-cmd    { color: #fff; }
-    .line-info   { color: var(--muted); }
-    .line-ok     { color: var(--green); }
-    .line-warn   { color: var(--amber); }
-    .line-section { color: #60a5fa; }
+    .line-info   { color: var(--term-muted); }
+    .line-ok     { color: var(--term-green); }
+    .line-warn   { color: var(--term-amber); }
+    .line-section { color: var(--term-blue); }
 
     /* blinking cursor */
     .cursor {
       display: inline-block;
       width: 9px; height: 1em;
-      background: var(--green);
+      background: var(--term-green);
       vertical-align: text-bottom;
       animation: blink 1s step-end infinite;
     }
@@ -191,43 +235,82 @@
       font-size: .7rem;
       letter-spacing: .18em;
       text-transform: uppercase;
-      color: var(--green);
+      color: var(--green-deep);
       margin-bottom: 1rem;
     }
     h2 {
       font-family: var(--mono);
       font-size: clamp(1.5rem, 4vw, 2.2rem);
-      color: #fff;
+      color: var(--text);
       margin-bottom: 2rem;
     }
 
-    /* ── FEATURES ────────────────────────────────────────── */
-    #features { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    /* ── FEATURES (bento, follows the kill-chain) ────────── */
+    #features { background: var(--surface-2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(6, 1fr);
       gap: 1px;
       background: var(--border);
       border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
     }
+    /* recon + scan lead wide, the mid-chain trio sits compact, root is the full-width climax */
+    .feat:nth-child(1), .feat:nth-child(2) { grid-column: span 3; }
+    .feat:nth-child(3), .feat:nth-child(4), .feat:nth-child(5) { grid-column: span 2; }
+    .feat:nth-child(6) { grid-column: span 6; }
+
     .feat {
       background: var(--surface);
       padding: 1.5rem;
+      position: relative;
+      transition: background .25s ease, transform .25s ease;
     }
+    .feat::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; background: var(--accent, var(--green));
+      transform: scaleY(0); transform-origin: top;
+      transition: transform .25s ease;
+    }
+    .feat:hover { background: var(--surface-2); }
+    .feat:hover::before { transform: scaleY(1); }
     .feat-tag {
       font-family: var(--mono);
       font-size: .68rem;
-      color: var(--green);
+      color: var(--accent, var(--green-deep));
       letter-spacing: .1em;
       margin-bottom: .4rem;
     }
+    .feat-tag span { color: var(--muted); }
     .feat h3 {
       font-family: var(--mono);
       font-size: .95rem;
-      color: #fff;
+      color: var(--text);
       margin-bottom: .35rem;
     }
-    .feat p { font-size: .85rem; color: var(--muted); }
+    .feat p { font-size: .85rem; color: var(--muted); max-width: 60ch; }
+
+    /* one hue per card → the colorful multi-accent rhythm */
+    .feat:nth-child(1) { --accent: var(--green-deep); }
+    .feat:nth-child(2) { --accent: var(--blue-deep); }
+    .feat:nth-child(3) { --accent: var(--pink-deep); }
+    .feat:nth-child(4) { --accent: var(--amber-deep); }
+    .feat:nth-child(5) { --accent: var(--blue-deep); }
+
+    /* root card: the cinematic finale, always lit */
+    .feat.feat-root {
+      --accent: var(--green-deep);
+      background: linear-gradient(120deg, rgba(8,162,74,.10), rgba(45,125,255,.08) 60%, rgba(255,61,139,.07));
+    }
+    .feat.feat-root::before { transform: scaleY(1); }
+    .feat.feat-root h3 { color: var(--green-deep); }
+
+    @media (max-width: 720px) {
+      .features-grid { grid-template-columns: 1fr; }
+      .feat:nth-child(n) { grid-column: span 1; }
+    }
 
     /* ── INSTALL ─────────────────────────────────────────── */
     #install {}
@@ -247,7 +330,7 @@
       letter-spacing: .06em;
       transition: color .2s, border-color .2s;
     }
-    .tab-btn.active { color: var(--green); border-bottom-color: var(--green); }
+    .tab-btn.active { color: var(--blue-deep); border-bottom-color: var(--blue); }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
 
@@ -260,23 +343,24 @@
     .step-num {
       font-family: var(--mono);
       font-size: .75rem;
-      color: var(--green);
+      color: var(--blue-deep);
       min-width: 2rem;
       padding-top: .1rem;
     }
     .step-body { flex: 1; }
     .step-title {
       font-family: var(--mono);
-      color: #fff;
+      color: var(--text);
       margin-bottom: .5rem;
       font-size: .9rem;
     }
     .step-body p { font-size: .875rem; color: var(--muted); margin-bottom: .75rem; }
 
+    /* code blocks stay dark, like the terminal */
     .code-block {
-      background: #060809;
-      border: 1px solid var(--border);
-      border-radius: 4px;
+      background: var(--term-bg);
+      border: 1px solid #1c2230;
+      border-radius: 6px;
       padding: .9rem 1.1rem;
       position: relative;
       overflow-x: auto;
@@ -284,7 +368,7 @@
     .code-block code {
       font-family: var(--mono);
       font-size: .8rem;
-      color: var(--green);
+      color: var(--term-green);
       white-space: pre;
     }
     .copy-btn {
@@ -292,47 +376,46 @@
       font-family: var(--mono);
       font-size: .65rem;
       padding: .2rem .5rem;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--muted);
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: #9fb0c8;
       border-radius: 3px;
       cursor: pointer;
-      transition: color .2s, border-color .2s;
+      transition: color .2s, border-color .2s, background .2s;
     }
-    .copy-btn:hover { color: var(--green); border-color: rgba(0,255,135,.3); }
-    .copy-btn.copied { color: var(--green); }
+    .copy-btn:hover { color: var(--term-green); border-color: rgba(0,255,135,.4); background: rgba(0,255,135,.08); }
+    .copy-btn.copied { color: var(--term-green); border-color: rgba(0,255,135,.4); }
 
     /* ── DISCLAIMER ──────────────────────────────────────── */
     #disclaimer {
-      background: var(--surface);
+      background: #fff4f4;
       border-top: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
     }
     .disclaimer-box {
-      border: 1px solid rgba(255,68,68,.25);
-      background: rgba(255,68,68,.04);
-      border-radius: 4px;
+      border: 1px solid rgba(229,72,77,.3);
+      background: rgba(229,72,77,.06);
+      border-radius: 8px;
       padding: 1.5rem;
       font-family: var(--mono);
       font-size: .82rem;
       line-height: 1.9;
     }
-    .disclaimer-box .dl { color: var(--red); margin-bottom: .5rem; font-size: .72rem; letter-spacing: .12em; }
+    .disclaimer-box .dl { color: var(--red-deep); margin-bottom: .5rem; font-size: .72rem; letter-spacing: .12em; }
     .disclaimer-box p { color: var(--text); }
 
     /* ── CREDIT ──────────────────────────────────────────── */
     #credit .credit-box {
-      border: 1px solid rgba(0,255,135,.15);
-      background: rgba(0,255,135,.025);
-      border-radius: 4px;
+      border: 1px solid rgba(8,162,74,.28);
+      background: linear-gradient(120deg, rgba(8,162,74,.07), rgba(45,125,255,.06));
+      border-radius: 8px;
       padding: 1.75rem 2rem;
       font-family: var(--mono);
     }
     .credit-name {
       font-size: 1.4rem;
-      color: var(--green);
+      color: var(--green-deep);
       margin-bottom: .5rem;
-      text-shadow: 0 0 20px rgba(0,255,135,.3);
     }
     .credit-sub { font-size: .8rem; color: var(--muted); }
     .credit-uses {
@@ -344,8 +427,8 @@
       padding: .25rem .7rem;
       border: 1px solid var(--border);
       border-radius: 2px;
-      color: var(--muted);
-      background: var(--bg);
+      color: var(--text);
+      background: var(--surface);
     }
 
     /* ── FOOTER ──────────────────────────────────────────── */
@@ -357,13 +440,43 @@
       font-size: .72rem;
       color: var(--muted);
     }
-    footer a { color: var(--green); text-decoration: none; }
+    footer a { color: var(--blue-deep); text-decoration: none; }
+
+    /* ── FOCUS & TACTILE FEEDBACK ────────────────────────── */
+    a:focus-visible,
+    button:focus-visible {
+      outline: 2px solid var(--green);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+    .tab-btn:active,
+    .copy-btn:active { transform: translateY(1px); }
+
+    /* ── SCROLL REVEAL ───────────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity .6s cubic-bezier(.16,1,.3,1), transform .6s cubic-bezier(.16,1,.3,1);
+    }
+    .reveal.in { opacity: 1; transform: none; }
 
     /* ── RESPONSIVE ──────────────────────────────────────── */
     @media (max-width: 600px) {
       nav { padding: .65rem 1rem; }
       .nav-links { gap: 1rem; }
       .step { flex-direction: column; gap: .5rem; }
+    }
+
+    /* ── REDUCED MOTION (mandatory) ──────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .001ms !important;
+      }
+      .cursor { animation: none; opacity: 1; }
+      .reveal { opacity: 1; transform: none; }
     }
   </style>
 </head>
@@ -384,7 +497,7 @@
 <section class="hero">
   <p class="eyebrow">Terminal Simulator</p>
   <h1><span class="accent">FAKE</span><br>HACKING</h1>
-  <p class="hero-sub">A cinematic red-team operation — fully simulated, zero real targets. Run it in any terminal and look like a Hollywood hacker.</p>
+  <p class="hero-sub">A cinematic red-team operation, fully simulated, with zero real targets. Run it in any terminal and look like a Hollywood hacker.</p>
   <div class="hero-badges">
     <span class="badge active">OSINT</span>
     <span class="badge active">Port Scan</span>
@@ -401,7 +514,7 @@
         <span class="dot dot-r"></span>
         <span class="dot dot-y"></span>
         <span class="dot dot-g"></span>
-        <span class="terminal-title">bash — 80×24</span>
+        <span class="terminal-title">bash - 80×24</span>
       </div>
       <div class="terminal-body" id="term-out"></div>
     </div>
@@ -415,34 +528,34 @@
     <h2>Full red-team pipeline</h2>
     <div class="features-grid">
       <div class="feat">
-        <div class="feat-tag">01 — RECON</div>
+        <div class="feat-tag"><span>01 /</span> RECON</div>
         <h3>OSINT &amp; Recon</h3>
-        <p>Target enumeration, DNS lookups, WHOIS, and social profile scraping — all simulated with realistic output.</p>
+        <p>Target enumeration, DNS lookups, WHOIS, and social profile scraping, all simulated with realistic output.</p>
       </div>
       <div class="feat">
-        <div class="feat-tag">02 — SCAN</div>
+        <div class="feat-tag"><span>02 /</span> SCAN</div>
         <h3>Port Scanning</h3>
         <p>Nmap-style sweep across all 65,535 ports with service banners and OS fingerprinting output.</p>
       </div>
       <div class="feat">
-        <div class="feat-tag">03 — FUZZ</div>
+        <div class="feat-tag"><span>03 /</span> FUZZ</div>
         <h3>Web Fuzzing</h3>
         <p>Directory brute-force, parameter injection, and hidden endpoint discovery with HTTP status codes.</p>
       </div>
       <div class="feat">
-        <div class="feat-tag">04 — INJECT</div>
+        <div class="feat-tag"><span>04 /</span> INJECT</div>
         <h3>SQL Injection</h3>
         <p>Union-based and blind SQLi with extracted table dumps. Looks painfully authentic.</p>
       </div>
       <div class="feat">
-        <div class="feat-tag">05 — AUTH</div>
+        <div class="feat-tag"><span>05 /</span> AUTH</div>
         <h3>Credential Brute Force</h3>
         <p>Hydra-style credential stuffing with a rockyou wordlist counter and a satisfying "ACCESS GRANTED".</p>
       </div>
-      <div class="feat">
-        <div class="feat-tag">06 — PWNED</div>
-        <h3>Metasploit Exploit + Root</h3>
-        <p>Full MSF session, privilege escalation to root, data exfiltration, and cinematic finale sequence.</p>
+      <div class="feat feat-root">
+        <div class="feat-tag"><span>06 /</span> PWNED</div>
+        <h3>Metasploit Exploit + Root Access</h3>
+        <p>The finale: a full MSF session, privilege escalation to root, staged data exfiltration, and the cinematic "ROOT ACCESS GRANTED" payoff that sells the whole act.</p>
       </div>
     </div>
   </div>
@@ -451,7 +564,6 @@
 <!-- INSTALL -->
 <section id="install">
   <div class="container">
-    <p class="section-label">Get started</p>
     <h2>How to run</h2>
 
     <div class="install-tabs">
@@ -466,7 +578,7 @@
         <div class="step-num">01</div>
         <div class="step-body">
           <div class="step-title">Prerequisites</div>
-          <p>You need <code style="color:var(--green);font-family:var(--mono)">bash</code> and <code style="color:var(--green);font-family:var(--mono)">curl</code> — both are installed by default on macOS and most Linux distros.</p>
+          <p>You need <code style="color:var(--green-deep);font-family:var(--mono)">bash</code> and <code style="color:var(--green-deep);font-family:var(--mono)">curl</code>. Both are installed by default on macOS and most Linux distros.</p>
         </div>
       </div>
       <div class="step">
@@ -507,7 +619,7 @@
         <div class="step-num">02</div>
         <div class="step-body">
           <div class="step-title">Open Ubuntu</div>
-          <p>Go to <strong style="color:#fff">Start → Ubuntu</strong>, or from PowerShell:</p>
+          <p>Go to <strong style="color:var(--text)">Start → Ubuntu</strong>, or from PowerShell:</p>
           <div class="code-block">
             <code>wsl</code>
             <button class="copy-btn" onclick="copyCode(this)">COPY</button>
@@ -542,8 +654,8 @@
       <div class="step">
         <div class="step-num">⚠</div>
         <div class="step-body">
-          <div class="step-title" style="color:var(--amber)">Expect broken colors</div>
-          <p>Native PowerShell doesn't fully support ANSI escape codes. You'll get a degraded experience. <strong style="color:#fff">WSL is strongly recommended.</strong></p>
+          <div class="step-title" style="color:var(--amber-deep)">Expect broken colors</div>
+          <p>Native PowerShell doesn't fully support ANSI escape codes. You'll get a degraded experience. <strong style="color:var(--text)">WSL is strongly recommended.</strong></p>
         </div>
       </div>
       <div class="step">
@@ -573,11 +685,10 @@
 <!-- DISCLAIMER -->
 <section id="disclaimer">
   <div class="container">
-    <p class="section-label">Legal</p>
     <h2>Disclaimer</h2>
     <div class="disclaimer-box">
       <div class="dl">⚠ READ THIS</div>
-      <p>This project does <strong style="color:#fff">NOT</strong> hack anything. No real networks, servers, or systems are accessed, probed, or modified. Everything is a simulation — fake payloads, fake responses, fake credentials. If you use this tool to misrepresent capabilities or commit fraud, that is entirely on you. This repository carries no liability for misuse.</p>
+      <p>This project does <strong style="color:var(--text)">NOT</strong> hack anything. No real networks, servers, or systems are accessed, probed, or modified. Everything is a simulation: fake payloads, fake responses, fake credentials. If you use this tool to misrepresent capabilities or commit fraud, that is entirely on you. This repository carries no liability for misuse.</p>
     </div>
   </div>
 </section>
@@ -585,7 +696,6 @@
 <!-- CREDIT -->
 <section id="credit">
   <div class="container">
-    <p class="section-label">Attribution</p>
     <h2>Credits</h2>
     <div class="credit-box">
       <div class="credit-name">KHANAL SAROJ</div>
@@ -597,7 +707,7 @@
         <span class="use-tag">🎵 TikTok / Shorts</span>
         <span class="use-tag">🎤 Talk / Presentation</span>
       </div>
-      <p style="margin-top:1.25rem;font-size:.8rem;color:var(--muted)">If you use this project in any of the above, please credit <span style="color:var(--green)">"Fake Hacking by KHANAL SAROJ"</span>. Basic human decency.</p>
+      <p style="margin-top:1.25rem;font-size:.8rem;color:var(--muted)">If you use this project in any of the above, please credit <span style="color:var(--green-deep)">"Fake Hacking by KHANAL SAROJ"</span>. Basic human decency.</p>
     </div>
   </div>
 </section>
@@ -607,7 +717,7 @@
   <p>
     <a href="https://github.com/khanalsaroj/fake-hacking" target="_blank">github.com/khanalsaroj/fake-hacking</a>
     &nbsp;·&nbsp;
-    made by <span style="color:var(--green)">KHANAL SAROJ</span>
+    made by <span style="color:var(--green-deep)">KHANAL SAROJ</span>
     &nbsp;·&nbsp;
     no real hacking happened
   </p>
@@ -640,7 +750,20 @@ const lines = [
 ];
 
 const out = document.getElementById('term-out');
+const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 let li = 0, ci = 0;
+
+function renderInstant() {
+  lines.forEach(line => {
+    const div = document.createElement('div');
+    if (line.cls) div.className = line.cls;
+    div.textContent = line.t;
+    out.appendChild(div);
+  });
+  const cur = document.createElement('span');
+  cur.className = 'cursor';
+  out.appendChild(cur);
+}
 
 function typeChar() {
   if (li >= lines.length) {
@@ -669,7 +792,29 @@ function typeChar() {
   }
 }
 
-setTimeout(typeChar, 600);
+if (prefersReduced) {
+  renderInstant();
+} else {
+  setTimeout(typeChar, 600);
+}
+
+/* ── SCROLL REVEAL ───────────────────────────────────── */
+if (!prefersReduced && 'IntersectionObserver' in window) {
+  const revealTargets = document.querySelectorAll('#features .container, #install .container, #disclaimer .container, #credit .container, .feat');
+  const io = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in');
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  revealTargets.forEach((el, i) => {
+    el.classList.add('reveal');
+    if (el.classList.contains('feat')) el.style.transitionDelay = (i % 6) * 60 + 'ms';
+    io.observe(el);
+  });
+}
 
 /* ── TAB SWITCHING ───────────────────────────────────── */
 function switchTab(id, btn) {
